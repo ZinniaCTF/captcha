@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Settings – Roblox Admin Panel</title>
+<style>
+    :root{
+        --topbar-bg:#f5f5f5;
+        --topbar-border:#e6e6e6;
+        --page-bg:#f0f0f0;
+        --card-bg:#fff;
+        --text-color:#333;
+        --link-blue:#0072c6;
+    }
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--page-bg);color:var(--text-color);padding-top:58px;}
+    .topbar{position:fixed;top:0;left:0;right:0;height:48px;background:var(--topbar-bg);border-bottom:1px solid var(--topbar-border);display:flex;align-items:center;z-index:1100;}
+    .topbar .container{max-width:1400px;margin:0 auto;padding:0 20px;width:100%;display:flex;justify-content:space-between;align-items:center;}
+    .page{max-width:900px;margin:28px auto;padding:20px;background:var(--card-bg);border-radius:6px;border:1px solid #ddd;}
+    h1{margin:0 0 12px 0;font-size:18px;}
+    .setting-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #eee;}
+    .setting-row label{font-weight:600;}
+    .desc{color:#666;margin-top:6px;font-size:13px;}
+    .footer{margin-top:18px;}
+    .button{padding:8px 12px;border-radius:4px;border:none;background:#418bca;color:#fff;font-weight:bold;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="container">
+        <div class="left">
+            <span>Customer Service &amp; Moderation</span>
+            <a href="cs.html" style="margin-left:12px; color:var(--link-blue); text-decoration:none;">Home</a>
+            <a href="find_user.html" style="margin-left:12px; color:var(--link-blue); text-decoration:none;">Find user</a>
+        </div>
+        <div class="right">Hi <strong>dn1u</strong></div>
+    </div>
+</div>
+
+<div class="page" role="main">
+    <h1>Settings</h1>
+    <p class="desc">Configure admin panel behavior. Changes are saved to localStorage and applied instantly.</p>
+
+    <div class="setting-row">
+        <div>
+            <label for="darkModeToggle">Dark mode</label>
+            <div class="desc">Enable a dark theme for the admin panel (persisted).</div>
+        </div>
+        <div>
+            <input type="checkbox" id="darkModeToggle" aria-label="Toggle dark mode">
+        </div>
+    </div>
+
+    <div class="setting-row">
+        <div>
+            <label for="compactModeToggle">Compact layout</label>
+            <div class="desc">Reduce spacing to see more information at once.</div>
+        </div>
+        <div>
+            <input type="checkbox" id="compactModeToggle" aria-label="Toggle compact layout">
+        </div>
+    </div>
+
+    <div class="setting-row">
+        <div>
+            <label for="hideOfflineToggle">Hide offline users</label>
+            <div class="desc">When enabled, the "Current Location" will hide offline state for privacy in lists (UI-only).</div>
+        </div>
+        <div>
+            <input type="checkbox" id="hideOfflineToggle" aria-label="Toggle hide offline">
+        </div>
+    </div>
+
+    <div class="setting-row">
+        <div>
+            <label for="proxyToggle">Use CORS proxy</label>
+            <div class="desc">When enabled the client will use the bundled CORS proxy. Disable if running a server-side proxy.</div>
+        </div>
+        <div>
+            <input type="checkbox" id="proxyToggle" aria-label="Toggle proxy usage">
+        </div>
+    </div>
+
+    <div class="footer">
+        <button id="saveBtn" class="button">Save settings</button>
+        <button id="resetBtn" class="button" style="background:#777;margin-left:8px;">Reset to defaults</button>
+    </div>
+
+    <div style="margin-top:18px;">
+        <a href="cs.html" style="color:var(--link-blue);">Back to Account Summary</a>
+        <span style="margin-left:12px;"><a href="find_user.html" style="color:var(--link-blue);">Find user</a></span>
+    </div>
+</div>
+
+<script>
+/*
+  Settings page:
+   - Toggles:
+       dark mode (adds/removes body.dark and persists admin_panel_theme=dark/light)
+       compact layout (adds/removes body.compact and persists)
+       hide offline (persisted, used by UI if implemented)
+       use CORS proxy (controls a stored flag; pages read this on load)
+   - Save button writes to localStorage and applies changes immediately.
+*/
+
+const SETTINGS_KEY = 'admin_panel_settings_v1';
+const defaults = {
+    darkMode: false,
+    compactMode: false,
+    hideOffline: false,
+    useProxy: true
+};
+
+function loadSettings(){
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (!raw) return Object.assign({}, defaults);
+        const parsed = JSON.parse(raw);
+        return Object.assign({}, defaults, parsed);
+    } catch (e) {
+        console.warn('Failed to load settings, using defaults', e);
+        return Object.assign({}, defaults);
+    }
+}
+function saveSettings(s){
+    try {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+    } catch (e) {
+        console.error('Failed to save settings', e);
+    }
+}
+
+function applySettings(s){
+    // dark mode
+    if (s.darkMode) document.body.classList.add('dark'); else document.body.classList.remove('dark');
+    // compact mode toggles some compact class (pages can style further)
+    if (s.compactMode) document.body.classList.add('compact'); else document.body.classList.remove('compact');
+    // hide offline: store flag (other pages may consult)
+    // useProxy: store preference (other pages will read)
+    saveSettings(s);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const settings = loadSettings();
+    document.getElementById('darkModeToggle').checked = settings.darkMode;
+    document.getElementById('compactModeToggle').checked = settings.compactMode;
+    document.getElementById('hideOfflineToggle').checked = settings.hideOffline;
+    document.getElementById('proxyToggle').checked = settings.useProxy;
+
+    // Apply immediately so the settings reflect while on this page
+    applySettings(settings);
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        const newSettings = {
+            darkMode: document.getElementById('darkModeToggle').checked,
+            compactMode: document.getElementById('compactModeToggle').checked,
+            hideOffline: document.getElementById('hideOfflineToggle').checked,
+            useProxy: document.getElementById('proxyToggle').checked
+        };
+        saveSettings(newSettings);
+        applySettings(newSettings);
+        alert('Settings saved. Changes applied immediately.');
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        if (!confirm('Reset settings to defaults?')) return;
+        saveSettings(defaults);
+        applySettings(defaults);
+        document.getElementById('darkModeToggle').checked = defaults.darkMode;
+        document.getElementById('compactModeToggle').checked = defaults.compactMode;
+        document.getElementById('hideOfflineToggle').checked = defaults.hideOffline;
+        document.getElementById('proxyToggle').checked = defaults.useProxy;
+        alert('Settings reset to defaults.');
+    });
+});
+</script>
+</body>
+</html>

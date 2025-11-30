@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roblox Admin Panel</title>
+<style>
+    /* Restored original color scheme and layout to match the original admin panel */
+    :root{--blue-shade:#418bca;--darker-blue:#2e6da4;--grey-divider:#e0e0e0;--link-blue:#0072c6;--sidebar-header-blue:#5b9edc;}
+    body{font-family:Arial,sans-serif;background:#f0f0f0;margin:0;padding:20px;font-size:13px;color:#333;}
+    /* If navbar present, reserve space — small topbar height */
+    .topbar-space{height:48px;}
+    .topbar{position:fixed;left:0;right:0;top:0;height:48px;background:#f5f5f5;border-bottom:1px solid #ddd;display:flex;align-items:center;z-index:1100;}
+    .topbar .container{max-width:1400px;margin:0 auto;width:100%;padding:0 20px;display:flex;justify-content:space-between;align-items:center;}
+    .topbar .left{color:#666;font-size:15px;}
+    .topbar .left a{margin-left:12px;color:var(--link-blue);text-decoration:none;}
+    .topbar .right{color:#666;font-size:13px;}
+    .topbar .right a{color:var(--link-blue);text-decoration:none;margin-left:6px;}
+    .main-grid-container{display:flex;max-width:1400px;margin:20px auto;gap:20px;padding:0 10px;}
+    .column-sidebar{flex-basis:200px;flex-shrink:0;background:#fff;border:1px solid var(--blue-shade);border-radius:5px;overflow:hidden;height:fit-content;}
+    .sidebar-header{background:var(--sidebar-header-blue);color:#fff;padding:8px 12px;font-weight:bold;border-bottom:1px solid #3371b8;}
+    .sidebar-section h3{background:#f7f7f7;padding:8px 12px;margin:0;border-top:1px solid #c9c9c9;border-bottom:1px solid #c9c9c9;}
+    .sidebar-link-list a{display:block;padding:5px 12px;color:var(--link-blue);text-decoration:none;}
+    .sidebar-link-list a:hover{background:#e5f0fa;text-decoration:underline;}
+    .sidebar-link-list a+a{border-top:1px solid #c9c9c9;}
+    .column-main{flex-grow:1;display:flex;gap:20px;}
+    .column-left{flex-basis:48%;background:#fff;border:1px solid var(--blue-shade);border-radius:5px;overflow:hidden;}
+    .column-right{flex-basis:52%;display:flex;flex-direction:column;gap:20px;}
+    .right-card{background:#fff;border:1px solid var(--blue-shade);border-radius:5px;overflow:hidden;}
+    h2{background:var(--blue-shade);color:#fff;padding:8px 12px;margin:0;font-size:14px;border-bottom:1px solid var(--darker-blue);}
+    .content{padding:15px 20px;}
+    .field{display:flex;align-items:center;margin-bottom:14px;min-height:24px;}
+    .field strong{width:190px;font-weight:bold;flex-shrink:0;}
+    .field .value{display:flex;align-items:center;gap:8px;color:#333;}
+    .field .value a{color:var(--link-blue);text-decoration:none;cursor:pointer;}
+    .field .value a:hover{text-decoration:underline;}
+    .button{padding:4px 10px;border:1px solid #707070;border-radius:3px;cursor:pointer;font-weight:bold;font-size:13px;background:#eee;}
+    .button.search{background:var(--blue-shade);border-color:var(--darker-blue);color:#fff;padding:2px 8px;font-size:12px;}
+    .button.green{background:#5cb85c;border-color:#4cae4c;color:#fff;}
+    .button.blue{background:var(--blue-shade);border-color:var(--darker-blue);color:#fff;}
+    .button.red{background:#d9534f;border-color:#d43f3a;color:#fff;}
+    input[type=text],input[type=password],select,textarea{padding:5px;border:1px solid #a9a9a9;border-radius:3px;font-size:13px;}
+    .column-left .field{border-bottom:1px solid var(--grey-divider);padding-bottom:14px;}
+    .column-left .content .field:last-child{border-bottom:none;padding-bottom:0;margin-bottom:0;}
+    .avatar-block{display:flex;align-items:center;margin-top:30px;gap:15px;}
+    .avatar{width:100px;height:100px;border:1px solid #ccc;object-fit:cover;}
+    .user-links a{display:block;margin-bottom:5px;color:var(--link-blue);text-decoration:none;}
+    .input-area{position:relative;padding-bottom:10px;border-bottom:1px solid var(--grey-divider);margin-bottom:10px;}
+    .note-box .icon{position:absolute;top:8px;left:8px;width:16px;height:16px;background:#eee;border:1px solid #999;background-image:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="%23555"><path d="M2 2v12h12V2H2zm1 1h8v5H3V3zM3 9h8v4H3V9zM4 4h6v1H4V4zm0 2h6v1H4V6zm6 5h1v1h-1v-1zm1-1h1v1h-1v-1zM4 10h1v2H4v-2zm2 0h1v2H6v-2zm2 0h1v2H8v-2z"/></svg>');background-size:12px;background-repeat:no-repeat;background-position:center;}
+    #note-textarea{width:calc(100% - 20px);height:80px;padding:8px 8px 8px 30px;resize:vertical;margin-bottom:10px;}
+    .saved-note{border:1px solid #ccc;padding:10px;border-radius:3px;margin-top:10px;background:#f9f9f9;position:relative;}
+    .update-user-form .field strong{width:140px;}
+    .update-user-form .field.with-divider{border-bottom:1px solid var(--grey-divider);padding-bottom:14px;}
+    .email-status{font-size:12px;margin-top:4px;}
+    .email-status .verified,.email-status .validated{color:#008000;margin-right:10px;}
+    .account-pin-status{color:#ff0000;font-weight:bold;font-size:16px;}
+    .update-buttons{margin-top:25px;display:flex;gap:10px;padding-top:15px;border-top:1px solid var(--grey-divider);}
+    .search-container{margin:20px 0;display:flex;gap:10px;}
+    .loading,.error{margin:20px 0;}
+    .loading{color:#666;font-style:italic;}
+    .error{color:#d9534f;}
+    .games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:15px;margin-top:20px;}
+    .game-card{text-align:center;background:#fff;border:1px solid #ddd;border-radius:5px;padding:10px;cursor:pointer;transition:0.2s;}
+    .game-card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.15);transform:translateY(-2px);}
+    .game-thumb{width:100%;height:120px;object-fit:cover;border-radius:4px;}
+    .game-name{margin:8px 0 4px;font-weight:bold;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .game-plays{color:#666;font-size:11px;}
+    .modal{display:none;position:fixed;z-index:1000;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}
+    .modal-content{background:#fff;width:90%;max-width:500px;border:1px solid var(--blue-shade);border-radius:5px;overflow:hidden;}
+    .modal-header{background:var(--blue-shade);color:#fff;padding:10px;position:relative;}
+    .modal-close{float:right;font-size:28px;cursor:pointer;font-weight:bold;}
+
+    /* Protected user banner (light red - Bootstrap-like alert-danger) */
+    .protected-banner {
+        display:none;
+        background: #f2dede; /* light red */
+        border: 1px solid #ebccd1;
+        color: #a94442;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+        border-radius:3px;
+        font-weight:bold;
+    }
+</style>
+</head>
+<body>
+
+<!-- Topbar kept but visually subtle and matching original palette -->
+<div class="topbar" role="navigation" aria-label="Top navigation">
+    <div class="container">
+        <div class="left">Customer Service &amp; Moderation
+            <!-- small navigation links kept inline -->
+            <a href="cs.html">Home</a>
+            <a href="find_user.html">Find user</a>
+            <a href="settings.html">Settings</a>
+        </div>
+        <div class="right">Hi <strong>dn1u</strong> <a href="#" id="logoutLink">(logout)</a></div>
+    </div>
+</div>
+<div class="topbar-space" aria-hidden="true"></div>
+
+<div class="main-grid-container">
+    <div class="column-sidebar">
+        <div class="sidebar-header">Customer Service</div>
+        <div class="sidebar-content">
+            <div class="sidebar-section"><h3>User Admin</h3><div class="sidebar-link-list">
+                <a href="find_user.html">Find user</a><a href="#">Find payment</a><a href="#">User Asset Transfer</a>
+                <a href="#">Asset Transfer</a><a href="#">User Transactions</a><a href="#">User Trades</a>
+                <a href="#">Send Personal Message</a><a href="#">User Message</a><a href="#">Preset Message</a>
+            </div></div>
+            <div class="sidebar-section"><h3>Groups</h3><div class="sidebar-link-list"><a href="#">Group Admin</a></div></div>
+            <div class="sidebar-section"><h3>Cards</h3><div class="sidebar-link-list"><a href="#">Debug Incomm</a><a href="#">Gift cards</a></div></div>
+            <div class="sidebar-section"><h3>Billing</h3><div class="sidebar-link-list">
+                <a href="#">Grant Builders Club</a><a href="#">Adjust Assets, Credit & Currency</a>
+                <a href="#">Imbursements</a><a href="#">Imbursements Blacklist</a><a href="#">Purchase Lock Review</a><a href="#">Asset</a>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="column-main">
+        <div class="column-left">
+            <h2>Account Summary</h2>
+            <div class="content">
+                <div class="search-container">
+                    <input type="text" id="searchInput" placeholder="Enter Username or User ID..." value="roblox">
+                    <button class="button blue" id="searchBtn">Search</button>
+                </div>
+
+                <!-- Protected user banner (hidden by default, shown when user is protected) -->
+                <div id="protectedBanner" class="protected-banner" role="status" aria-live="polite">This user is a Protected User!</div>
+
+                <div id="loading" class="loading" style="display:none;">Loading user data...</div>
+                <div id="error" class="error" style="display:none;"></div>
+
+                <div id="summaryFields">
+                    <div class="field"><strong>Display Name</strong> <span class="value" id="displayName">-</span></div>
+                    <div class="field"><strong>Moderation Status</strong> <span class="value">OK</span></div>
+                    <div class="field"><strong>User ID</strong> <span class="value" id="userId">-</span></div>
+                    <div class="field"><strong>User Name</strong> <span class="value" id="username">-</span></div>
+                    <div class="field"><strong>Loyal Since</strong> <span class="value" id="joinDate">-</span></div>
+                    <div class="field"><strong>Current Location:</strong> <span class="value">Offline</span></div>
+
+                    <div class="avatar-block">
+                        <img id="avatarImg" src="https://via.placeholder.com/150?text=Avatar" alt="Avatar" class="avatar" crossorigin="anonymous" decoding="async">
+                        <div class="user-links">
+                            <a href="#" id="homepageLink">User homepage</a>
+                            <a href="#">Moderate user</a>
+                            <a href="#">Payment info</a>
+                        </div>
+                    </div>
+
+                    <h2 style="margin-top:40px;">Created Games</h2>
+                    <div id="gamesContainer" class="games-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="column-right">
+            <div class="right-card">
+                <h2>User Notes</h2>
+                <div class="content note-box">
+                    <div class="input-area">
+                        <div class="icon"></div>
+                        <textarea id="note-textarea" placeholder="Enter new note..."></textarea>
+                        <button class="button green" id="add-note-btn">Add Note</button>
+                        <p id="note-status" style="margin-top:10px;color:green;display:none;">Note saved!</p>
+                    </div>
+                    <div id="saved-notes-display"></div>
+                </div>
+            </div>
+
+            <div class="right-card">
+                <h2>Update User</h2>
+                <div class="content update-user-form">
+                    <div class="field"><strong>User Name</strong> <span class="value"><input type="text" id="updateUsername"></span></div>
+                    <div class="field" style="align-items:flex-start;">
+                        <strong>Email</strong>
+                        <span class="value" style="flex-direction:column;align-items:flex-start;">
+                            <input type="text" id="updateEmail">
+                            <div class="email-status"><span class="verified">Verified</span><span class="validated">Validated</span></div>
+                            <a href="#" id="view-email-log-btn" style="font-size:12px;margin-top:4px;">View Email Log</a>
+                        </span>
+                    </div>
+                    <div class="field"><strong>Password</strong> <span class="value"><input type="password"></span></div>
+                    <div class="field"><strong>Phone Number</strong> <span class="value">Not connected</span></div>
+                    <div class="field with-divider"><strong>Phone Number Log</strong> <span class="value"><a href="#" id="view-phone-log-btn">View All</a></span></div>
+                    <div class="field with-divider"><strong>2SV</strong> <span class="value">Enabled <select><option>Email</option></select> <button class="button green" style="font-weight:normal;">Update 2SV</button></span></div>
+                    <div class="field with-divider"><strong>2SV Settings Log</strong> <span class="value"><a href="#" id="view-2sv-log-btn">View All</a></span></div>
+                    <div class="field"><strong>Account PIN</strong> <span class="value">Enabled <span class="account-pin-status">X</span></span></div>
+                    <div class="update-buttons">
+                        <button class="button blue">Update User</button>
+                        <button class="button red">Remove</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="infoModal" class="modal"><div class="modal-content">
+    <div class="modal-header"><span class="modal-close">×</span><span id="modal-title-text">Log</span></div>
+    <div class="modal-body" id="modal-content-text"></div>
+</div></div>
+
+<script>
+/*
+loads cors + uh the fucking proteced user txt hting
+*/
+
+/* -------------------- Configuration & helpers -------------------- */
+const DEFAULT_PROXY_PREFIX = "https://corsproxy.io/?";
+const MAX_CONCURRENT_FETCHES = 6;
+const DEFAULT_RETRIES = 4;
+const BASE_BACKOFF_MS = 700;
+const LS_THUMB_CACHE_KEY = 'admin_thumb_cache_v1';
+const THUMB_CACHE_TTL_MS = 1000 * 60 * 60 * 6; // 6 hours
+
+let persistentThumbCache = {};
+try { persistentThumbCache = JSON.parse(localStorage.getItem(LS_THUMB_CACHE_KEY) || '{}') || {}; } catch(e){ persistentThumbCache = {}; }
+
+const avatarCache = new Map();
+const gameIconCache = new Map();
+
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text).replace(/[&<>"']/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+
+// semaphore for concurrent requests
+let activeFetches = 0;
+const fetchQueue = [];
+function enqueueFetch(fn) {
+  return new Promise((resolve, reject) => {
+    fetchQueue.push({fn, resolve, reject});
+    processQueue();
+  });
+}
+function processQueue(){
+  if (activeFetches >= MAX_CONCURRENT_FETCHES) return;
+  const item = fetchQueue.shift();
+  if (!item) return;
+  activeFetches++;
+  Promise.resolve()
+    .then(() => item.fn())
+    .then(res => item.resolve(res))
+    .catch(err => item.reject(err))
+    .finally(() => { activeFetches--; processQueue(); });
+}
+
+/* -------------------- Proxy / fetch utilities -------------------- */
+const SETTINGS_KEY = 'admin_panel_settings_v1';
+function useProxyFromSettings(){
+    try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw === null) return true;
+        const s = JSON.parse(raw);
+        if (!s || typeof s !== 'object') return true;
+        const v = s.useProxy;
+        if (typeof v === 'boolean') return v;
+        if (typeof v === 'string') {
+            const lv = v.toLowerCase().trim();
+            if (lv === 'true') return true;
+            if (lv === 'false') return false;
+        }
+        if (typeof v === 'number') return v === 1;
+        return true;
+    } catch (e) {
+        console.warn('[admin-panel] useProxyFromSettings parse error', e);
+        return true;
+    }
+}
+let GLOBAL_PROXY_PREFIX = useProxyFromSettings() ? DEFAULT_PROXY_PREFIX : '';
+function refreshProxyPrefix(){ GLOBAL_PROXY_PREFIX = useProxyFromSettings() ? DEFAULT_PROXY_PREFIX : ''; console.info('[admin-panel] proxy =', GLOBAL_PROXY_PREFIX ? 'ENABLED' : 'DISABLED'); }
+window.addEventListener('storage', (e) => { if (e.key === SETTINGS_KEY) refreshProxyPrefix(); });
+
+function buildFetchUrl(url){
+  if (GLOBAL_PROXY_PREFIX && /^https?:\/\//i.test(url)) return GLOBAL_PROXY_PREFIX + url;
+  if (GLOBAL_PROXY_PREFIX && url.startsWith('/')) return GLOBAL_PROXY_PREFIX + url;
+  return url;
+}
+
+function delay(ms){ return new Promise(res => setTimeout(res, ms)); }
+
+async function safeFetchJson(fullUrl, options = {}, retries = DEFAULT_RETRIES) {
+  return enqueueFetch(async () => {
+    let attempt = 0;
+    while (true) {
+      attempt++;
+      let finalUrl = buildFetchUrl(fullUrl);
+      try {
+        if (attempt === 1) console.debug('[admin-panel] fetching', finalUrl);
+        const resp = await fetch(finalUrl, Object.assign({ mode: 'cors', credentials: 'omit', redirect: 'follow', referrerPolicy: 'no-referrer' }, options));
+        if (!resp) throw new Error('No response');
+        if (resp.type === 'opaque') throw new Error('Opaque response (no CORS headers)');
+        if (resp.status === 429) {
+          const ra = resp.headers.get('Retry-After');
+          let waitMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+          if (ra) {
+            const raSeconds = parseInt(ra,10);
+            if (!isNaN(raSeconds)) waitMs = raSeconds * 1000;
+          }
+          if (attempt <= retries) {
+            showRateLimitNotice(`Rate limited (429). Retrying in ${Math.round(waitMs/1000)}s (attempt ${attempt}/${retries})...`);
+            await delay(waitMs); clearRateLimitNoticeIfNeeded(); continue;
+          }
+          throw new Error(`Request failed (429)`);
+        }
+        if (!resp.ok) throw new Error(`Request failed (${resp.status})`);
+        const ct = resp.headers.get('Content-Type') || '';
+        if (ct.includes('application/json') || ct.includes('json')) return await resp.json();
+        const txt = await resp.text();
+        try { return JSON.parse(txt); } catch(e){ return txt; }
+      } catch (err) {
+        const transient = /NetworkError|Failed to fetch|ECONNRESET|ECONNREFUSED|timeout|429/i.test(err.message || '');
+        if ((attempt <= retries) && transient) {
+          const waitMs = BASE_BACKOFF_MS * Math.pow(2, attempt - 1);
+          showRateLimitNotice(`Temporary issue. Retrying in ${Math.round(waitMs/1000)}s (attempt ${attempt}/${retries})...`);
+          await delay(waitMs); clearRateLimitNoticeIfNeeded(); continue;
+        }
+        throw err;
+      }
+    }
+  });
+}
+
+let rateLimitTimeoutId = null;
+function showRateLimitNotice(msg) {
+  const el = document.getElementById('error');
+  if (!el) return;
+  el.textContent = msg; el.style.display = 'block';
+  if (rateLimitTimeoutId) clearTimeout(rateLimitTimeoutId);
+  rateLimitTimeoutId = setTimeout(()=>clearRateLimitNoticeIfNeeded(), 20000);
+}
+function clearRateLimitNoticeIfNeeded() {
+  const el = document.getElementById('error');
+  if (!el) return;
+  if (el.textContent && /Retrying|Rate limited|Temporary issue/i.test(el.textContent)) { el.style.display = 'none'; el.textContent = ''; }
+}
+
+/* -------------------- Thumbnail helpers (unchanged) -------------------- */
+function persistThumbCacheSet(key, valueObj) { persistentThumbCache[key] = { value: valueObj, ts: Date.now() }; try { localStorage.setItem(LS_THUMB_CACHE_KEY, JSON.stringify(persistentThumbCache)); } catch(e){} }
+function persistThumbCacheGet(key) { const rec = persistentThumbCache[key]; if (!rec) return null; if ((Date.now() - (rec.ts||0)) > THUMB_CACHE_TTL_MS) { delete persistentThumbCache[key]; try { localStorage.setItem(LS_THUMB_CACHE_KEY, JSON.stringify(persistentThumbCache)); } catch(e){} return null; } return rec.value; }
+
+async function fetchAvatarFromThumbnails(userId, size = 420) {
+  if (!userId) return null;
+  if (avatarCache.has(userId)) return avatarCache.get(userId);
+  const cached = persistThumbCacheGet(`avatar:${userId}:${size}`);
+  if (cached) { avatarCache.set(userId, cached); return cached; }
+  const api = `https://thumbnails.roblox.com/v1/users/avatar?userIds=${encodeURIComponent(userId)}&size=${size}x${size}&format=Png&isCircular=false`;
+  try {
+    const json = await safeFetchJson(api);
+    if (json && Array.isArray(json.data) && json.data.length > 0 && json.data[0].imageUrl) {
+      let src = json.data[0].imageUrl; if (src.startsWith('//')) src = 'https:' + src;
+      if (!/^https?:\/\//i.test(src)) src = 'https://www.roblox.com' + (src.startsWith('/') ? src : '/' + src);
+      avatarCache.set(userId, src); persistThumbCacheSet(`avatar:${userId}:${size}`, src);
+      return src;
+    }
+  } catch (err) { console.warn('fetchAvatarFromThumbnails error:', err); }
+  const fallback = `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userId)}&width=${size}&height=${size}&format=png`;
+  avatarCache.set(userId, fallback); return fallback;
+}
+async function fetchGameIconsBatch(universeIds = [], size = '512x512') {
+  const out = {}; if (!Array.isArray(universeIds) || universeIds.length === 0) return out;
+  const toFetch = [];
+  for (const id of universeIds) {
+    if (gameIconCache.has(id)) { out[id] = gameIconCache.get(id); continue; }
+    const cached = persistThumbCacheGet(`gameIcon:${id}:${size}`);
+    if (cached) { gameIconCache.set(id, cached); out[id] = cached; continue; }
+    toFetch.push(id);
+  }
+  if (toFetch.length === 0) return out;
+  const CHUNK = 40;
+  for (let i=0;i<toFetch.length;i+=CHUNK) {
+    const chunk = toFetch.slice(i,i+CHUNK);
+    const api = `https://thumbnails.roblox.com/v1/games/icons?universeIds=${chunk.map(id=>encodeURIComponent(id)).join(',')}&size=${size}&format=Png`;
+    try {
+      const json = await safeFetchJson(api);
+      if (json && Array.isArray(json.data)) {
+        for (const entry of json.data) {
+          try {
+            const uid = entry.targetId;
+            const img = entry.imageUrl ? (entry.imageUrl.startsWith('//') ? 'https:' + entry.imageUrl : entry.imageUrl) : null;
+            const url = img || "https://via.placeholder.com/512?text=No+Image";
+            gameIconCache.set(uid, url); persistThumbCacheSet(`gameIcon:${uid}:${size}`, url); out[uid] = url;
+          } catch(e){}
+        }
+      }
+    } catch(err){ console.warn('fetchGameIconsBatch chunk failed:', err); }
+  }
+  return out;
+}
+function setAvatarSrc(imgEl, url, userIdForFallback='') {
+  if (!imgEl) return;
+  try {
+    const keep = new Set(['id','class','src','alt','width','height','style','crossorigin','decoding']);
+    for (const attr of Array.from(imgEl.attributes)) if (!keep.has(attr.name)) try{ imgEl.removeAttribute(attr.name); }catch(e){}
+    imgEl.style.filter='none'; imgEl.style.opacity='1';
+    try{ imgEl.decoding='async'; }catch(e){}
+    try{ imgEl.crossOrigin='anonymous'; }catch(e){}
+    const probe = new Image(); probe.crossOrigin='anonymous'; probe.decoding='async';
+    probe.onload = ()=>{ try{ imgEl.src = probe.src; imgEl.style.filter='none'; imgEl.style.opacity='1'; } catch(e){} };
+    probe.onerror = (ev)=>{ console.warn('Probe failed to load avatar URL:', url, ev); if (userIdForFallback) { const fallback = `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(userIdForFallback)}&width=420&height=420&format=png`; if (probe.src !== fallback) { setTimeout(()=> setAvatarSrc(imgEl, fallback, ''), 50); return; } } imgEl.src = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420"><rect width="100%" height="100%" fill="#eee"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#777" font-family="Arial, sans-serif" font-size="24">No Avatar</text></svg>'); };
+    let finalUrl = url || ''; if (finalUrl.startsWith('//')) finalUrl = 'https:' + finalUrl; probe.src = finalUrl;
+  } catch(err){ console.error('setAvatarSrc unexpected error:', err); }
+}
+
+/* -------------------- Protected users support (GitHub raw URL) -------------------- */
+/*
+  Primary source: https://raw.githubusercontent.com/ZinniaCTF/protected/refs/heads/main/protectedusers.txt
+  Behavior:
+    - Try fetching the GitHub raw URL first.
+    - If that fails (network/CORS), attempt to fetch local protectedusers.txt.
+    - If that also fails (e.g., file:// restrictions), fall back to the file-picker / paste UI approach.
+    - Parsing: remove parentheses and contents, trim, remove spaces, lowercase -> store in PROTECTED_SET.
+*/
+const PROTECTED_SET = new Set();
+const PROTECTED_GITHUB_RAW = 'https://raw.githubusercontent.com/ZinniaCTF/protected/refs/heads/main/protectedusers.txt';
+
+// parse string contents (entire file) and populate PROTECTED_SET
+function parseProtectedText(text) {
+  PROTECTED_SET.clear();
+  if (!text) return;
+  const lines = text.split(/\r?\n/);
+  for (let raw of lines) {
+    let line = raw.trim();
+    if (!line) continue;
+    // Remove parentheses and contents: "UserName (something)" -> "UserName"
+    line = line.replace(/\s*\([^)]*\)/g, '').trim();
+    if (!line) continue;
+    // Remove spaces entirely (ignore spaces) and lowercase
+    const normalized = line.toLowerCase().replace(/\s+/g, '');
+    if (normalized) PROTECTED_SET.add(normalized);
+  }
+  console.info('[admin-panel] protected usernames loaded:', PROTECTED_SET.size);
+}
+
+// Attempt to fetch from the GitHub raw URL
+async function tryLoadProtectedUsersFile_fromGitHub() {
+  try {
+    const resp = await fetch(PROTECTED_GITHUB_RAW, { cache: 'no-store' });
+    if (!resp.ok) {
+      console.info('[admin-panel] GitHub protectedusers.txt fetch returned', resp.status);
+      return false;
+    }
+    const text = await resp.text();
+    parseProtectedText(text);
+    return true;
+  } catch (err) {
+    console.warn('[admin-panel] fetch protectedusers.txt from GitHub failed:', err);
+    return false;
+  }
+}
+
+// Attempt to fetch local protectedusers.txt (same folder) as fallback
+async function tryLoadProtectedUsersFile_local() {
+  try {
+    const resp = await fetch('protectedusers.txt', { cache: 'no-store' });
+    if (!resp.ok) {
+      console.info('[admin-panel] local protectedusers.txt fetch returned', resp.status);
+      return false;
+    }
+    const text = await resp.text();
+    parseProtectedText(text);
+    return true;
+  } catch (err) {
+    console.warn('[admin-panel] local protectedusers.txt fetch failed:', err);
+    return false;
+  }
+}
+
+// If both remote and local fetch fail, show the file-loader UI
+function showProtectedFileLoader(reasonMsg) {
+  // reuse protected file loader UI if implemented elsewhere; in this panel we will show the banner instructing
+  // the user to run via HTTP server or use Settings to provide content. For compatibility keep a simple alert.
+  // But to preserve full functionality, we'll dynamically create a simple file input and paste area below banner.
+  const loaderId = '__protected_file_picker_dynamic';
+  let loader = document.getElementById(loaderId);
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = loaderId;
+    loader.style.margin = '10px 0 12px 0';
+    loader.style.padding = '10px';
+    loader.style.border = '1px dashed #ccc';
+    loader.style.background = '#fffefc';
+    loader.style.borderRadius = '4px';
+    loader.innerHTML = `
+      <div style="font-size:13px;color:#333;margin-bottom:8px;">
+        Could not load protectedusers.txt automatically. You can either choose the protectedusers.txt file or paste its contents below.
+      </div>
+      <input type="file" id="__protected_file_picker_input" accept=".txt,text/plain" style="display:block;margin-bottom:8px;">
+      <textarea id="__protected_file_paste_area" placeholder="Paste protectedusers.txt contents here..." style="width:100%;height:100px;padding:8px;border:1px solid #ddd;border-radius:3px;font-family:monospace;margin-bottom:8px;"></textarea>
+      <div style="text-align:right;">
+        <button id="__protected_file_paste_load" class="button blue" style="margin-right:8px;">Load from paste</button>
+        <button id="__protected_file_picker_clear" class="button">Clear</button>
+      </div>
+    `;
+    const container = document.querySelector('.content');
+    if (container) container.insertBefore(loader, container.firstChild);
+    // wire events
+    document.getElementById('__protected_file_picker_input').addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => { parseProtectedText(String(reader.result || '')); alert('Protected users loaded from file.'); loader.remove(); };
+      reader.onerror = () => { alert('Failed to read file.'); };
+      reader.readAsText(f);
+    });
+    document.getElementById('__protected_file_paste_load').addEventListener('click', () => {
+      const txt = document.getElementById('__protected_file_paste_area').value || '';
+      if (!txt.trim()) return alert('Paste area is empty.');
+      parseProtectedText(txt);
+      alert('Protected users loaded from paste.');
+      loader.remove();
+    });
+    document.getElementById('__protected_file_picker_clear').addEventListener('click', () => {
+      document.getElementById('__protected_file_picker_input').value = '';
+      document.getElementById('__protected_file_paste_area').value = '';
+      PROTECTED_SET.clear();
+      hideProtectedBanner();
+      loader.remove();
+      alert('Protected users cleared.');
+    });
+  }
+}
+
+// Unified loader that tries GitHub, then local, then UI fallback
+async function loadProtectedUsersFile() {
+  // prefer GitHub raw URL
+  try {
+    const okGit = await tryLoadProtectedUsersFile_fromGitHub();
+    if (okGit) {
+      console.info('[admin-panel] loaded protectedusers.txt from GitHub raw URL');
+      return;
+    }
+  } catch(err) {
+    console.warn('[admin-panel] error while trying GitHub raw', err);
+  }
+  // fallback to local file (same folder)
+  try {
+    const okLocal = await tryLoadProtectedUsersFile_local();
+    if (okLocal) {
+      console.info('[admin-panel] loaded protectedusers.txt from local file');
+      return;
+    }
+  } catch(err) {
+    console.warn('[admin-panel] error while trying local protectedusers.txt', err);
+  }
+  // show fallback UI if still not loaded
+  const reason = (location.protocol === 'file:') ? 'Automatic loading blocked because this page is opened via file://. Browsers disallow fetching local files from file://.' : 'Could not load protectedusers.txt automatically (network/CORS).';
+  showProtectedFileLoader(reason);
+}
+
+// helper to check if a username is protected
+function isUsernameProtected(rawUsername) {
+    if (!rawUsername) return false;
+    // Normalize same way: remove parentheses content, remove spaces, lowercase
+    const normalized = String(rawUsername).replace(/\s*\([^)]*\)/g, '').trim().toLowerCase().replace(/\s+/g, '');
+    if (PROTECTED_SET.has(normalized)) return true;
+    // Also try without removing spaces (just in case)
+    const normalized2 = String(rawUsername).trim().toLowerCase();
+    if (PROTECTED_SET.has(normalized2.replace(/\s+/g, ''))) return true;
+    return false;
+}
+function showProtectedBanner(username) {
+    const el = document.getElementById('protectedBanner');
+    if (!el) return;
+    el.style.display = 'block';
+    el.innerHTML = `This user is a Protected User!`;
+}
+function hideProtectedBanner() {
+    const el = document.getElementById('protectedBanner');
+    if (!el) return;
+    el.style.display = 'none';
+    el.innerHTML = '';
+}
+
+/* -------------------- Main search / UI flows -------------------- */
+async function renderUserGamesForUserId(userId) {
+  const container = document.getElementById('gamesContainer');
+  container.innerHTML = '';
+  const api = `https://games.roblox.com/v2/users/${encodeURIComponent(userId)}/games?limit=50`;
+  let gamesJson;
+  try { gamesJson = await safeFetchJson(api); } catch (err) { console.warn('Games fetch failed or blocked:', err); container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#666;">Could not load games (blocked or rate-limited).</p>'; return; }
+  if (!(gamesJson && Array.isArray(gamesJson.data) && gamesJson.data.length > 0)) { container.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#666;">No games found</p>'; return; }
+  const universeIds = []; for (const g of gamesJson.data) { if (g.universeId) universeIds.push(g.universeId); }
+  const iconsMap = await fetchGameIconsBatch(universeIds, '512x512');
+  for (const g of gamesJson.data) {
+    const universeId = g.universeId;
+    const thumbUrl = iconsMap[universeId] || "https://via.placeholder.com/512?text=No+Image";
+    const card = document.createElement('div'); card.className = 'game-card';
+    card.onclick = () => window.open(`https://roblox.com/games/${g.rootPlaceId || ''}/`, '_blank');
+    card.innerHTML = `
+      <img src="${escapeHtml(thumbUrl)}" class="game-thumb" onerror="this.src='https://via.placeholder.com/512?text=No+Image'">
+      <div class="game-name">${escapeHtml(g.name || 'Untitled')}</div>
+      <div class="game-plays">${((g.playing)||0).toLocaleString()} playing • ${((g.visits)||0).toLocaleString()} visits</div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+async function searchUser() {
+  const query = (document.getElementById('searchInput').value || '').trim() || "roblox";
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('error').style.display = 'none';
+  document.getElementById('gamesContainer').innerHTML = '';
+  hideProtectedBanner();
+
+  try {
+    let userId = query;
+    if (!/^\d+$/.test(query)) {
+      const api = `https://users.roblox.com/v1/users/search?keyword=${encodeURIComponent(query)}&limit=10`;
+      let searchJson;
+      try { searchJson = await safeFetchJson(api); } catch (err) { throw new Error('User search blocked or failed: ' + (err.message || err)); }
+      const exact = (searchJson.data || []).find(x => x.name && x.name.toLowerCase() === query.toLowerCase());
+      const user = exact || (searchJson.data && searchJson.data.length ? searchJson.data[0] : null);
+      if (!user) throw new Error("User not found");
+      userId = user.id;
+    }
+
+    const infoApi = `https://users.roblox.com/v1/users/${encodeURIComponent(userId)}`;
+    const info = await safeFetchJson(infoApi);
+
+    document.getElementById('displayName').textContent = info.displayName || info.name || '-';
+    document.getElementById('username').textContent = info.name || '-';
+    document.getElementById('userId').textContent = info.id || userId;
+    document.getElementById('joinDate').textContent = info.created ? new Date(info.created).toLocaleDateString() : '-';
+    document.getElementById('updateUsername').value = info.name || '';
+    document.getElementById('updateEmail').value = '';
+    document.getElementById('homepageLink').onclick = e => { e.preventDefault(); window.open(`https://roblox.com/users/${info.id}/profile`, '_blank'); };
+
+    // Check protected status (based on protectedusers.txt)
+    try {
+        if (isUsernameProtected(info.name)) {
+            showProtectedBanner(info.name);
+        } else {
+            hideProtectedBanner();
+        }
+    } catch (err) {
+        console.warn('Protected check failed', err);
+        hideProtectedBanner();
+    }
+
+    // Avatar (use cache & thumbnails API)
+    const avatarImgEl = document.getElementById('avatarImg');
+    avatarImgEl.src = 'https://media.tenor.com/RbKRfQfIcXIAAAAj/roblox-loading.gif';
+    try {
+      const avatarUrl = await fetchAvatarFromThumbnails(info.id, 420);
+      setAvatarSrc(avatarImgEl, avatarUrl, info.id);
+    } catch (err) {
+      console.warn('Avatar fetch failed, fallback to headshot', err);
+      setAvatarSrc(avatarImgEl, `https://www.roblox.com/headshot-thumbnail/image?userId=${encodeURIComponent(info.id)}&width=420&height=420&format=png`);
+    }
+
+    // Games - batched icons & render
+    await renderUserGamesForUserId(userId);
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById('error').textContent = "Error: " + (e.message || String(e));
+    document.getElementById('error').style.display = 'block';
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+/* -------------------- Startup -------------------- */
+document.getElementById('searchInput').addEventListener('keypress', e => { if (e.key === 'Enter') searchUser(); });
+document.getElementById('searchBtn').addEventListener('click', searchUser);
+window.onload = () => {
+  try {
+      const p = JSON.parse(localStorage.getItem(LS_THUMB_CACHE_KEY) || '{}');
+      persistentThumbCache = p || {};
+  } catch (e) { persistentThumbCache = {}; }
+  for (const k in persistentThumbCache) {
+      if (!persistentThumbCache.hasOwnProperty(k)) continue;
+      const val = persistentThumbCache[k];
+      if (!val || !val.value) continue;
+      const parts = k.split(':');
+      const type = parts[0];
+      const id = parts[1];
+      if (type === 'avatar') avatarCache.set(id, val.value);
+      if (type === 'gameIcon') gameIconCache.set(Number(id), val.value);
+  }
+  refreshProxyPrefix();
+
+  // Load protected users file (attempt GitHub raw then fallback)
+  loadProtectedUsersFile();
+
+  const params = new URLSearchParams(location.search);
+  const q = params.get('user') || params.get('userid') || params.get('id');
+  if (q) document.getElementById('searchInput').value = q;
+  setTimeout(() => { try { searchUser(); } catch(e){ console.warn('Initial search failed', e); } }, 120);
+};
+
+/* -------------------- Notes & Modal -------------------- */
+const NOTE_KEY = 'admin_notes_2025_cs';
+function renderNotes() {
+  const notes = JSON.parse(localStorage.getItem(NOTE_KEY) || '[]');
+  const d = document.getElementById('saved-notes-display');
+  d.innerHTML = '';
+  notes.forEach((n,i) => {
+    const div = document.createElement('div'); div.className = 'saved-note';
+    div.innerHTML = `<p style="margin:0;white-space:pre-wrap;">${escapeHtml(n.text)}</p>
+        <small style="color:#888;">Added: ${escapeHtml(n.date)}</small>
+        <button class="button red" style="position:absolute;top:5px;right:5px;padding:2px 5px;font-size:10px;" onclick="deleteNote(${i})">Delete</button>`;
+    d.appendChild(div);
+  });
+}
+window.deleteNote = i => {
+  let n = JSON.parse(localStorage.getItem(NOTE_KEY) || '[]');
+  n.splice(i,1);
+  localStorage.setItem(NOTE_KEY, JSON.stringify(n));
+  renderNotes();
+};
+document.getElementById('add-note-btn').onclick = () => {
+  const t = document.getElementById('note-textarea').value.trim();
+  if (!t) return;
+  const n = JSON.parse(localStorage.getItem(NOTE_KEY) || '[]');
+  n.unshift({text:t, date:new Date().toLocaleDateString()});
+  localStorage.setItem(NOTE_KEY, JSON.stringify(n));
+  document.getElementById('note-textarea').value = '';
+  renderNotes();
+  document.getElementById('note-status').style.display = 'block';
+  setTimeout(() => document.getElementById('note-status').style.display = 'none', 3000);
+};
+renderNotes();
+
+document.querySelector('.modal-close').onclick = () => document.getElementById('infoModal').style.display = 'none';
+window.onclick = e => { if (e.target === document.getElementById('infoModal')) document.getElementById('infoModal').style.display = 'none'; };
+function showPopup(t,c){document.getElementById('modal-title-text').textContent=t;document.getElementById('modal-content-text').innerHTML=c;document.getElementById('infoModal').style.display='flex';}
+document.getElementById('view-email-log-btn')?.addEventListener('click', e=>{ e.preventDefault(); showPopup('Email Log','<p>None found</p>'); });
+document.getElementById('view-phone-log-btn')?.addEventListener('click', e=>{ e.preventDefault(); showPopup('Phone Number Log','<p>None found</p>'); });
+document.getElementById('view-2sv-log-btn')?.addEventListener('click', e=>{ e.preventDefault(); showPopup('2SV Settings Log','<p>None found</p>'); });
+
+document.getElementById('logoutLink').addEventListener('click', (e) => { e.preventDefault(); showPopup('Logout','<p>This would log out the admin panel session. (demo)</p>'); });
+
+// Expose debug helpers and proxy state
+window.ADMIN_PANEL_DEBUG = {
+    avatarCache, gameIconCache, persistentThumbCache,
+    safeFetchJson, buildFetchUrl, refreshProxyPrefix,
+    getProxyPrefix: () => GLOBAL_PROXY_PREFIX,
+    DEFAULT_PROXY_PREFIX, SETTINGS_KEY, PROTECTED_SET,
+    PROTECTED_GITHUB_RAW
+};
+</script>
+</body>
+</html>
